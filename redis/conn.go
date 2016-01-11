@@ -239,9 +239,11 @@ func (c *conn) fatal(err error) error {
 	c.mu.Lock()
 	if c.err == nil {
 		c.err = err
-		// Close connection to force errors on subsequent calls and to unblock
-		// other reader or writer.
-		c.conn.Close()
+		if opErr, ok := err.(*net.OpError); !ok || (ok && !opErr.Timeout()) {
+			// Close connection to force errors on subsequent calls and to unblock
+			// other reader or writer.
+			c.conn.Close()
+		}
 	}
 	c.mu.Unlock()
 	return err
